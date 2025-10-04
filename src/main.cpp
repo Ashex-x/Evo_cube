@@ -1,11 +1,23 @@
 #include <Arduino.h>
+#include <Adafruit_NeoPixel.h> //WS2812B driver
+#include <WiFi.h> //WiFi connection
 
 // put function declarations here:
-int myFunction(int, int);
+
+
+// config
+
 
 void setup() {
-  // put your setup code here, to run once:
-  int result = myFunction(2, 3);
+  // general initialization
+  Serial.begin(115200);
+
+  //WiFi initialization
+  WiFi.begin(WiFi_SSID, WiFi_password);
+
+
+  // read config parameters
+
 }
 
 void loop() {
@@ -13,6 +25,3 @@ void loop() {
 }
 
 // put function definitions here:
-int myFunction(int x, int y) {
-  return x + y;
-}

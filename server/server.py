@@ -65,32 +65,32 @@ class PCMReceiver:
     
     def handle_client(self, client_socket):
         try:
-            # 接收PCM头
+            # Receive PCM header
             header_data = client_socket.recv(16)
             if len(header_data) == 16:
                 magic, sample_rate, channels, bits_per_sample, data_size = \
                     struct.unpack('<IIHHI', header_data)
                 
-                if magic == 0x50434D31:  # 验证PCM1魔术字
+                if magic == 0x50434D31:  # Verify .magic
                     print(f"Audio stream: {sample_rate}Hz, {channels}ch, {bits_per_sample}bit")
             
-            # 音频数据缓冲区
+            # Audio buffer
             audio_buffer = bytearray()
             min_buffer_size = 32000  # 约1秒的数据
             
             while True:
-                data = client_socket.recv(2048)  # 接收数据
+                data = client_socket.recv(2048)  # Receive data
                 if not data:
                     break
                 
                 audio_buffer.extend(data)
                 
-                # 当积累足够数据时进行识别
+                # Start recongnition
                 if len(audio_buffer) >= min_buffer_size:
-                    # 转换为bytes进行识别
+                    # Convert to bytes
                     audio_data = bytes(audio_buffer)
                     
-                    # 使用FunASR识别
+                    # Start FunASR
                     result = self.model.generate(input=audio_data)
                     
                     if result and len(result) > 0:

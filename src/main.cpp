@@ -12,6 +12,8 @@
 #include <lwip/sockets.h>
 
 WiFiClient client; 
+TaskHandle_t audioReadHandle;
+TaskHandle_t audioSendHandle;
 
 Adafruit_NeoPixel WS2812B(NUMS_WS2812B, DIN_WS2812B, NEO_GRB + NEO_KHZ800); // init WS2812
 
@@ -19,11 +21,11 @@ Adafruit_NeoPixel WS2812B(NUMS_WS2812B, DIN_WS2812B, NEO_GRB + NEO_KHZ800); // i
 // put function declarations here:
 void initLED();
 void audio_i2s();
-void audio_read();
+void audio_read(void *parameter);
 void initPCM();
 void led_screen(const int num_pixels);
 void initWifi();
-void audio_send();
+void audio_send(void *parameter);
 
 // Global parameter for audio
 int16_t samples_a[INMPBUFFER_SIZE];
@@ -40,12 +42,39 @@ void setup() {
   initPCM();
   audio_i2s();
 
+  xTaskCreatePinnedToCore(
+    audio_read,         // Function name
+    "Audio Task",       // Task name
+    4096,               // Memory
+    NULL,               // Parameter
+    1,              
+    &audioReadHandle,   // Handle
+    1                   // Core
+  );
+    
+  xTaskCreatePinnedToCore(
+    audio_send,         // Function name
+    "Network Task",     // Task name
+    4096,               // Memory
+    NULL,               // Parameter
+    1,              
+    &audioSendHandle,   // Handle
+    1                   // Core
+  );
   
 }
 
 void loop() {
   led_screen(NUMS_WS2812B);
-  
+
+  static unsigned long lastStatus = 0;
+  if (millis() - lastStatus > 5000) {
+    Serial.printf("WiFi: %s, Server: %s, Buffer Ready: %s\n",
+                  WiFi.status() == WL_CONNECTED ? "Connected" : "Disconnected",
+                  client.connected() ? "Connected" : "Disconnected",
+                  bufferReady ? "Yes" : "No");
+    lastStatus = millis();
+  }
 }
 
 
@@ -98,33 +127,6 @@ void led_screen(const int num_pixels) {
   WS2812B.show();
   delay(2000);
   
-  
-  /*
-  WS2812B.clear();
-  for (int pixel = 0; pixel < num_pixels; pixel++) {         // for each pixel
-    WS2812B.setPixelColor(pixel, WS2812B.Color(0, 255, 0));  // it only takes effect if pixels.show() is called
-    WS2812B.show();                                          // update to the WS2812B Led Strip
-
-    delay(10);  // 500ms pause between each pixel
-  }
-
-  // turn off all pixels for two seconds
-  WS2812B.clear();
-  WS2812B.show();  // update to the WS2812B Led Strip
-  delay(2000);     // 2 seconds off time
-
-  // turn on all pixels to red at the same time for two seconds
-  for (int pixel = 0; pixel < num_pixels; pixel++) {         // for each pixel
-    WS2812B.setPixelColor(pixel, WS2812B.Color(255, 0, 0));  // it only takes effect if pixels.show() is called
-  }
-  WS2812B.show();  // update to the WS2812B Led Strip
-  delay(1000);     // 1 second on time
-
-  // turn off all pixels for one seconds
-  WS2812B.clear();
-  WS2812B.show();  // update to the WS2812B Led Strip
-  delay(1000);     // 1 second off time
-  */
 }
 
 void audio_i2s() {
@@ -155,7 +157,7 @@ void audio_i2s() {
   i2s_set_pin(I2S_PORT, &pin_config);
 }
 
-void audio_read() {
+void audio_read(void *parameter) {
   size_t bytes_read = 0;
   int32_t raw_samples[INMPBUFFER_SIZE];
   
@@ -206,7 +208,7 @@ void initPCM() {
   }
 }
 
-void audio_send() {
+void audio_send(void *parameter) {
   if (bufferReady && client.connected()) {
     noInterrupts();
     // Send PCM

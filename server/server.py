@@ -3,72 +3,73 @@ import struct
 import threading
 from funasr import AutoModel
 
-def initServer():
-    server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-
-    host = '0.0.0.0'
-    port = 13579
-
-    server.bind((host, port))
-    server.listen(1) # max clients
-    print(f"Lisening: {host}:{port}")
-    client, addr = server.accept()
-    print(f"connect to {str(addr)}")
-
-    client.send("Welcome to Ashex's island".encode('utf-8'))
-
-    while True:
-        data = client.recv(1024).decode('uft-8')
-        if not data:
-            break
-        print(f"receive: {data.strip()}")
-
-
-if (__name__ == "__main__"):
-    print("Launching server.")
-    initServer()
-
-class PCMReceiver:
-    def __init__(self, host='0.0.0.0', port=8080):
+class Server:
+    def __init__(self, host='0.0.0.0', port=13579):
         self.host = host
         self.port = port
         self.sample_rate = 16000
+
+        self.server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        self.server.bind((self.host, self.port))
+        self.server.listen(1) # max clients
+        print(f"Lisening: {self.host}:{self.port}")
+        return self.server
         
-        # 初始化FunASR模型
+    def lanchServer(self):
+        client, addr = self.server.accept()
+        print(f"connect to {str(addr)}")
+
+        """
+        while True:
+            data = client.recv(1024).decode('uft-8')
+            if not data:
+                break
+            print(f"receive: {data.strip()}")
+        """
+
+        while True:
+            client.send("Welcome to Ashex's island".encode('utf-8'))
+
+        
+
+
+
+
+class FunASR:
+    
+    def __init__(self, server):
+        self.server = server
+
+        # init FunASR
         print("Loading FunASR model...")
         self.model = AutoModel(
             model="iic/speech_paraformer-large_asr_nat-zh-cn-16k-common-vocab8404-pytorch",
             vad_model="iic/speech_fsmn_vad_zh-cn-16k-common-pytorch",
-            punc_model="iic/punc_ct-transformer_zh-cn-common-vocab272727-pytorch"
+            punc_model="iic/punc_ct-transformer_zh-cn-common-vocab272727-pytorch",
+            device="CUDA:0"
         )
         print("Model loaded successfully!")
         
     def start_receive(self):
-        server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        server_socket.bind((self.host, self.port))
-        server_socket.listen(1)
-        
-        print(f"PCM receiver listening on {self.host}:{self.port}")
-        
         while True:
-            client_socket, addr = server_socket.accept()
+            client, addr = self.server.accept()
             print(f"Connected by {addr}")
             
-            # 为每个连接创建新线程
+            # New process for every client
             client_thread = threading.Thread(
                 target=self.handle_client, 
-                args=(client_socket,)
+                args=(client,)
             )
             client_thread.daemon = True
             client_thread.start()
     
-    def handle_client(self, client_socket):
+    def handle_client(self, client):
         try:
             # Receive PCM header
-            header_data = client_socket.recv(16)
+            header_data = client.recv(16)
             if len(header_data) == 16:
-                magic, sample_rate, channels, bits_per_sample, data_size = \
+                magic, sample_rate, channels, bits_per_sample, datasize = \
                     struct.unpack('<IIHHI', header_data)
                 
                 if magic == 0x50434D31:  # Verify .magic
@@ -76,10 +77,10 @@ class PCMReceiver:
             
             # Audio buffer
             audio_buffer = bytearray()
-            min_buffer_size = 32000  # 约1秒的数据
+            min_buffer_size = 32000  # 1s data
             
             while True:
-                data = client_socket.recv(2048)  # Receive data
+                data = client.recv(2048)  # Receive data
                 if not data:
                     break
                 
@@ -96,18 +97,21 @@ class PCMReceiver:
                     if result and len(result) > 0:
                         text = result[0].get('text', '').strip()
                         if text:
-                            print(f"识别结果: {text}")
+                            print(f"Result: {text}")
                     
-                    # 保留部分数据用于连续识别
-                    keep_size = 8000  # 保留0.25秒作为上下文
+                    # consistent recognition
+                    keep_size = 8000  # 0.25s context
                     audio_buffer = audio_buffer[-keep_size:] if len(audio_buffer) > keep_size else bytearray()
                     
         except Exception as e:
             print(f"Client handling error: {e}")
         finally:
-            client_socket.close()
+            client.close()
             print("Client disconnected")
 
+
 if __name__ == "__main__":
-    receiver = PCMReceiver()
-    receiver.start_receive()
+    server = Server()
+    island = server.lanchServer()
+    # funasr_model = FunASR(island)
+    # funasr_model.start_receive()

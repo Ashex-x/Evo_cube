@@ -1,41 +1,34 @@
 import socket
 import struct
 import threading
-from funasr import AutoModel
+# from funasr import AutoModel
 
 class Server:
     def __init__(self, host='0.0.0.0', port=13579):
         self.host = host
         self.port = port
         self.sample_rate = 16000
-
+        
+    def lanchServer(self):
+        # Init server
         self.server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         self.server.bind((self.host, self.port))
         self.server.listen(1) # max clients
         print(f"Lisening: {self.host}:{self.port}")
-        return self.server
-        
-    def lanchServer(self):
+
+        # Wait for client to connect
         client, addr = self.server.accept()
         print(f"connect to {str(addr)}")
-
-        """
+        # Greet client
+        client.send("Welcome to Ashex's island".encode('utf-8'))
+        
         while True:
             data = client.recv(1024).decode('uft-8')
-            if not data:
-                break
+            
             print(f"receive: {data.strip()}")
-        """
-
-        while True:
-            client.send("Welcome to Ashex's island".encode('utf-8'))
-
         
-
-
-
-
+"""
 class FunASR:
     
     def __init__(self, server):
@@ -109,9 +102,9 @@ class FunASR:
             client.close()
             print("Client disconnected")
 
-
+"""
 if __name__ == "__main__":
-    server = Server()
-    island = server.lanchServer()
+    island = Server()
+    island.lanchServer()
     # funasr_model = FunASR(island)
     # funasr_model.start_receive()

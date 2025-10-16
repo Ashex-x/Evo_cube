@@ -1,6 +1,8 @@
+# Lanch my server of FunASR and deepseek
+# Deepseek API key: sk-f7efbc5143204001aa97633dd04310e2
+
 import socket
 import struct
-import threading
 import torch
 from funasr import AutoModel
 
@@ -17,13 +19,7 @@ class Server:
         self.server.bind((self.host, self.port))
         self.server.listen(1) # max clients
         print(f"Lisening: {self.host}:{self.port}")
-
-        # Wait for client to connect
-        client, addr = self.server.accept()
-        print(f"connect to {str(addr)}")
-        # Greet client
-        client.send("Welcome to Ashex's island".encode('utf-8'))
-
+        
         return self.server
         
 
@@ -41,15 +37,22 @@ class FunASR:
             model="iic/speech_paraformer-large_asr_nat-zh-cn-16k-common-vocab8404-pytorch",
             vad_model="iic/speech_fsmn_vad_zh-cn-16k-common-pytorch",
             punc_model="iic/punc_ct-transformer_zh-cn-common-vocab272727-pytorch",
-            device="CUDA:0",
+            device="cuda:0",
             disable_update=True
         )
         print("Model loaded successfully!")
         
     def start_receive(self):
+        
+        # Wait for client to connect
+        print("Waiting for client.")
+
         while True:
             client, addr = self.server.accept()
             print(f"Connected by {addr}")
+
+            # Greet client
+            client.send("Welcome to Ashex's island".encode('utf-8'))
 
             self.handle_client(client)
     
@@ -71,8 +74,8 @@ class FunASR:
             while True:
                 data = client.recv(2048)  # Receive data
                 if not data:
+
                     break
-                
                 
                 audio_buffer.extend(data)
                 

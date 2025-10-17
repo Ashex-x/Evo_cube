@@ -33,10 +33,10 @@ int16_t samples_a[INMPBUFFER_SIZE];
 int16_t samples_b[INMPBUFFER_SIZE];
 int16_t* currentBuffer = samples_a;
 int16_t* sendBuffer = samples_b;
-volatile bool bufferReady = false; // Buffer ready or not
 
 static unsigned long lastStatus = 0;
-SemaphoreHandle_t audio_mutex;
+SemaphoreHandle_t audio_mutex = NULL;          // mutex to protect buffer pointers
+SemaphoreHandle_t audio_ready_sem = NULL;      // Binary Semaphore to signal buffer readiness
 
 // Debug varialbe
 bool debug_1 = false;
@@ -67,10 +67,22 @@ void setup() {
   connectServer();
 
   // -----------------Audio protocol---------------------
-  audio_mutex = xSemaphoreCreateMutex();
   audio_i2s();
-  initPCM();
 
+  audio_mutex = xSemaphoreCreateMutex();
+  // Handle error: Mutex creation failed
+  if (audio_mutex == NULL) {
+    Serial.print("\nError: Failed to create audio_mutex!");
+    return;
+  }
+  
+  audio_ready_sem = xSemaphoreCreateBinary();
+  if (audio_ready_sem == NULL) {
+    // Handle error: Semaphore creation failed
+    Serial.print("\nError: Failed to create audio_ready_sem!");
+    return;
+  }
+    
   // -----------------FreeRTOS task---------------------
   xTaskCreatePinnedToCore(
     audio_read,         // Function name
@@ -104,11 +116,6 @@ void loop() {
     Serial.printf("Debug_2: %s", debug_2 ? "True" : "False");
     Serial.printf("\nDebug_3: %s", debug_3 ? "True" : "False");
     Serial.printf("Debug_4: %s", debug_4 ? "True" : "False");
-    
-    if (!bufferReady) {
-
-      Serial.print("\nBuffer not ready.");
-    }
 
     if (!client.connected()) {
 
@@ -150,12 +157,14 @@ void initWifi() {
 }
 
 void connectServer() {
-  Serial.print(".");
-  if (client.connect(SERVER_IP, SERVER_PORT)) {
-    Serial.println("\nServer connected.");
-  } else {
-    connectServer();
+  while (!client.connect(SERVER_IP, SERVER_PORT)) {
+
+    Serial.print(".");
+    // Add a delay to avoid overwhelming the network and prevent stack overflow
+    vTaskDelay(pdMS_TO_TICKS(500)); 
   }
+  Serial.println("\nServer connected.");
+  initPCM();
 }
 
 void led_screen(const int num_pixels) {
@@ -249,7 +258,6 @@ void audio_read(void *parameter) {
   
   while (true) {
 
-    bufferReady = false;
     // Serial.print("\nStart read audio");
     i2s_read(I2S_PORT, raw_samples, INMPBUFFER_SIZE * sizeof(int32_t), &bytes_read, portMAX_DELAY);
     // Serial.print("\nReading ");
@@ -273,17 +281,21 @@ void audio_read(void *parameter) {
       int16_t* temp = sendBuffer;
       sendBuffer = currentBuffer;
       currentBuffer = temp;
-      bufferReady = true;
+
       debug_2 = true;
       xSemaphoreGive(audio_mutex);
+
+      xSemaphoreGive(audio_ready_sem);
     }
     
   }
 }
 
+
 void audio_send(void *parameter) {
-  while (true)
+  while (xSemaphoreTake(audio_ready_sem, portMAX_DELAY) == pdTRUE)
   {
+
     if (!client.connected()) {
 
       Serial.print("\nConnection lost, attempting to reconnect...");
@@ -296,22 +308,20 @@ void audio_send(void *parameter) {
         vTaskDelay(pdMS_TO_TICKS(500)); 
         continue;
       }
+      Serial.println("Reconnected.");
+
+      initPCM();
     }
 
-    if (bufferReady) { 
-      debug_3 = true;
-      if (xSemaphoreTake(audio_mutex, portMAX_DELAY) == pdTRUE) {
+    size_t bytes_to_send = INMPBUFFER_SIZE * sizeof(int16_t);
 
-        if (bufferReady && client.connected()) { 
-          // Safely read/send the data from sendBuffer
-          size_t bytes_to_send = INMPBUFFER_SIZE * sizeof(int16_t);
-          client.write((uint8_t*)sendBuffer, bytes_to_send);
-          debug_4 = true;
-          bufferReady = false; // Reset the flag
-        }
-        
-        xSemaphoreGive(audio_mutex);
-      }
+    if (xSemaphoreTake(audio_mutex, portMAX_DELAY) == pdTRUE) {
+
+      // Safely read/send the data from sendBuffer
+      client.write((uint8_t*)sendBuffer, bytes_to_send);
+      debug_4 = true;
+      xSemaphoreGive(audio_mutex);
+      
     }
     
     vTaskDelay(pdMS_TO_TICKS(1));

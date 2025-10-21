@@ -272,7 +272,7 @@ void audio_read(void *parameter) {
     for (int i = 0; i < INMPBUFFER_SIZE; i++) {
 
       // Cast to int16_t automatically takes the lower 16 bits after the shift.
-      currentBuffer[i] = (int16_t)(raw_samples[i] >> 8);
+      currentBuffer[i] = (int16_t)(raw_samples[i] >> 16);
       debug_1 = true;
     }
 
@@ -305,7 +305,7 @@ void audio_send(void *parameter) {
 
         Serial.print(".");
         // Yield and wait 500ms before retrying
-        vTaskDelay(pdMS_TO_TICKS(500)); 
+        vTaskDelay(pdMS_TO_TICKS(500));
         continue;
       }
       Serial.println("Reconnected.");

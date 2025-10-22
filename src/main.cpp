@@ -1,6 +1,8 @@
-// since this is just a small project, I only use one file to finish it.
-// TODO: compelet FunASR
-// TODO: compelet DPSK
+/* Main program for ESP32
+*
+*
+*
+*/
 
 #include <Arduino.h>
 #include <Adafruit_NeoPixel.h>  // WS2812B driver
@@ -61,7 +63,7 @@ void setup() {
 
   initLED();
   
-  // -----------------WiFi and server----------------
+  // -----------------WiFi and server--------------------
   initWifi();
   Serial.print("\nConnecting to server.");
   connectServer();
@@ -255,7 +257,34 @@ void initPCM() {
 void audio_read(void *parameter) {
   size_t bytes_read = 0;
   int32_t raw_samples[INMPBUFFER_SIZE];
+  bool is_speaking = false;
+  long long sum_energy = 0;
+  int avg_energy = 0;
+  int cur_energy = 0;
+
+  // Initializing VAD(Voice Acivity Detection)
+  Serial.print("\nKeep silence for a moment.Inintializing VAD.");
+  for (size_t j = 0; j < 10; j++)
+  {
+    for (int i = 0; i < INMPBUFFER_SIZE; i++) {
+
+    // Cast to int16_t automatically takes the lower 16 bits after the shift.
+    i2s_read(I2S_PORT, raw_samples, INMPBUFFER_SIZE * sizeof(int32_t), &bytes_read, portMAX_DELAY);
+    currentBuffer[i] = (int16_t)(raw_samples[i] >> 16);
+    sum_energy += (long long)currentBuffer[i];
+    cur_energy = (int)(sum_energy / INMPBUFFER_SIZE);
+    }
+
+    if (cur_energy > avg_energy) {
+      avg_energy = cur_energy;
+    }
+    
+    Serial.print("\nVAD energy critical point:");
+    Serial.print(avg_energy);
+  }
   
+  
+
   while (true) {
 
     // Serial.print("\nStart read audio");

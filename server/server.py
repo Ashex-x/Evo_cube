@@ -1,6 +1,6 @@
 # Lanch my server of FunASR and deepseek
 # Deepseek API key: sk-f7efbc5143204001aa97633dd04310e2
-# Set powershell if you are using WSL2: netsh interface portproxy add v4tov4 listenport=13579 listenaddress=192.168.118.212 connectport=13579 connectaddress=<hostname -I>
+# Set powershell if you are using WSL2: netsh interface portproxy add v4tov4 listenport=13579 listenaddress=0.0.0.0 connectport=13579 connectaddress=<hostname -I>
 
 import socket
 import struct
@@ -36,10 +36,10 @@ class FunASR:
         is_cuda = torch.cuda.is_available()
         print(f"CUDA Available to PyTorch: {is_cuda}")
         self.model = AutoModel(
-            model="paraformer-en",                    # English model
+            model="paraformer-en",                      # English model
             vad_model=None,
             # vad_model="fsmn-vad",                     # Voice activity detection
-            punc_model="ct-punc",                     # Punctuation
+            punc_model="ct-punc",                       # Punctuation
             streaming=True,
             device="cuda:0",
             disable_update=True
@@ -50,14 +50,13 @@ class FunASR:
         
         # Wait for client to connect
         print("Waiting for client.")
+        client, addr = self.server.accept()
+        print(f"Connected by {addr}")
+        # Greet client
+        client.send("\nWelcome to Ashex's island".encode('utf-8'))
 
         while True:
-            client, addr = self.server.accept()
-            print(f"Connected by {addr}")
-
-            # Greet client
-            client.send("Welcome to Ashex's island".encode('utf-8'))
-
+            
             self.handle_client(client)
     
     def handle_client(self, client):
@@ -80,7 +79,7 @@ class FunASR:
             
             # Audio buffer
             audio_buffer = bytearray()
-            process_chunk_size = 9600
+            process_chunk_size = 96000
 
             while True:
                 data = client.recv(2048)  # Receive data

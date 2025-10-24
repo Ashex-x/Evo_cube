@@ -1,6 +1,7 @@
 # Lanch my server of FunASR and deepseek
 # Deepseek API key: sk-f7efbc5143204001aa97633dd04310e2
-# Set powershell if you are using WSL2: netsh interface portproxy add v4tov4 listenport=13579 listenaddress=0.0.0.0 connectport=13579 connectaddress=<hostname -I>
+# Set powershell if you are using WSL2: 
+# netsh interface portproxy add v4tov4 listenport=13579 listenaddress=0.0.0.0 connectport=13579 connectaddress=<hostname -I>
 
 import socket
 import struct
@@ -38,7 +39,7 @@ class FunASR:
         self.model = AutoModel(
             model="paraformer-en",                      # English model
             vad_model=None,
-            # vad_model="fsmn-vad",                     # Voice activity detection
+            vad_model="fsmn-vad",                       # Voice activity detection
             punc_model="ct-punc",                       # Punctuation
             streaming=True,
             device="cuda:0",
@@ -70,6 +71,7 @@ class FunASR:
                     struct.unpack('<IIHHI', header_data)
                 
                 if magic == 0x50434D31:  # Verify .magic
+
                     if sample_rate != 16000 or bits_per_sample != 16 or channels != 1:
                         print("Error: Model requires 16k Hz, 16-bit, mono audio.")
                         client.send("Error: Invalid audio format. Requires 16k/16bit/mono.".encode('utf-8'))

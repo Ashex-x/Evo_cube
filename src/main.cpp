@@ -1,5 +1,5 @@
 /* Main program for ESP32
-*
+* Notice: You can fix VAD application
 *
 *
 */
@@ -13,7 +13,7 @@
 #include <freertos/semphr.h>
 #include <lwip/sockets.h>
 
-WiFiClient client; 
+WiFiClient client;
 TaskHandle_t audioReadHandle;
 TaskHandle_t audioSendHandle;
 
@@ -49,17 +49,6 @@ bool debug_4 = false;
 void setup() {
   // general initialization
   Serial.begin(115200);
-
-  // init debug
-  debug_1 = false;
-  debug_2 = false;
-  debug_3 = false;
-  debug_4 = false;
-
-  Serial.printf("\nDebug_1: %s", debug_1 ? "True" : "False");
-  Serial.printf("  Debug_2: %s", debug_2 ? "True" : "False");
-  Serial.printf("\nDebug_3: %s", debug_3 ? "True" : "False");
-  Serial.printf("  Debug_4: %s", debug_4 ? "True" : "False");
 
   initLED();
   
@@ -112,32 +101,29 @@ void loop() {
   led_screen(NUMS_WS2812B);
   
   // Connection block
+  /*
   if (millis() - lastStatus > 5000) {
     
     Serial.printf("\nDebug_1: %s", debug_1 ? "True" : "False");
     Serial.printf("Debug_2: %s", debug_2 ? "True" : "False");
     Serial.printf("\nDebug_3: %s", debug_3 ? "True" : "False");
     Serial.printf("Debug_4: %s", debug_4 ? "True" : "False");
-
-    if (!client.connected()) {
-
-      Serial.print("\nConnection lost. Reconnecting to server.");
-      connectServer();
-    } else {
-
-      if (client.available()) {
-
-        String response = client.readStringUntil('\n');
-        Serial.print("Server: ");
-        Serial.println(response);
-    } else {
-
-        Serial.print("\nNo response.");
-    }
-    }
-
   }
+  */
 
+  if (!client.connected()) {
+
+    Serial.print("\nConnection lost. Reconnecting to server.");
+    connectServer();
+  } else {
+
+    if (client.available()) {
+
+      String response = client.readStringUntil('\n');
+      Serial.print("\nServer: ");
+      Serial.println(response);
+    }
+  }
 }
 
 
@@ -257,36 +243,69 @@ void initPCM() {
 void audio_read(void *parameter) {
   size_t bytes_read = 0;
   int32_t raw_samples[INMPBUFFER_SIZE];
-  bool is_speaking = false;
+  int is_speaking = 0;
   long long sum_energy = 0;
   int avg_energy = 0;
-  int cur_energy = 0;
 
   // Initializing VAD(Voice Acivity Detection)
   Serial.print("\nKeep silence for a moment.Inintializing VAD.");
-  for (size_t j = 0; j < 10; j++)
+  for (int j = 0; j < 10; j++) // read 10 times
   {
-    for (int i = 0; i < INMPBUFFER_SIZE; i++) {
-
-    // Cast to int16_t automatically takes the lower 16 bits after the shift.
-    i2s_read(I2S_PORT, raw_samples, INMPBUFFER_SIZE * sizeof(int32_t), &bytes_read, portMAX_DELAY);
-    currentBuffer[i] = (int16_t)(raw_samples[i] >> 16);
-    sum_energy += (long long)currentBuffer[i];
-    cur_energy = (int)(sum_energy / INMPBUFFER_SIZE);
-    }
-
-    if (cur_energy > avg_energy) {
-      avg_energy = cur_energy;
-    }
+    esp_err_t read_err = i2s_read(I2S_PORT, raw_samples, INMPBUFFER_SIZE * sizeof(int32_t), &bytes_read, portMAX_DELAY);
     
-    Serial.print("\nVAD energy critical point:");
-    Serial.print(avg_energy);
+    for (int i = 0; i < INMPBUFFER_SIZE; i++) { 
+
+      if (read_err != ESP_OK) {
+        Serial.print("\nI2S read error.");
+        break;
+      } else {
+
+        // Cast to int16_t automatically takes the lower 16 bits after the shift.
+        currentBuffer[i] = (int16_t)(raw_samples[i] >> 16);
+        // Serial.print("\n currentBuffer:");
+        // Serial.print(currentBuffer[i]);
+        // Calculate Sum
+        if (j > 0) {
+          if (currentBuffer[i] >= 0) {
+            sum_energy += currentBuffer[i];
+            /*
+            if (sum_energy < currentBuffer[i]) {
+              max_energy = currentBuffer[i];
+              Serial.println(max_energy);
+            }
+            */
+          } else {
+            sum_energy -= currentBuffer[i];
+            /*
+            int a = 0 - currentBuffer[i];
+            if (sum_energy < a) {
+              max_energy = a;
+              Serial.println(max_energy);
+            }
+              */
+          }
+        }
+        
+
+        if (currentBuffer[i] > 100 || (0 - currentBuffer[i]) > 100) {
+          Serial.printf("Large energy: %d: %d", i, currentBuffer[i]);
+        }
+
+      }
+    }
+
+    Serial.printf("\nVAD process: %d %%", (j+1)*10);
   }
   
+  avg_energy = (int)(sum_energy / (INMPBUFFER_SIZE*9));
+  int cri_energy = 4 * avg_energy;
+  Serial.print("\nVAD energy critical point:");
+  Serial.print(cri_energy);
   
-
   while (true) {
 
+    // -----------------------read audio---------------------------
+    sum_energy = 0;
     // Serial.print("\nStart read audio");
     i2s_read(I2S_PORT, raw_samples, INMPBUFFER_SIZE * sizeof(int32_t), &bytes_read, portMAX_DELAY);
     // Serial.print("\nReading ");
@@ -298,12 +317,23 @@ void audio_read(void *parameter) {
     }
     // Serial.print("finish.");
 
+    // ------------------------detect voice------------------------
     for (int i = 0; i < INMPBUFFER_SIZE; i++) {
 
       // Cast to int16_t automatically takes the lower 16 bits after the shift.
       currentBuffer[i] = (int16_t)(raw_samples[i] >> 16);
-      debug_1 = true;
+      if (currentBuffer[i] >= 0) {
+        sum_energy += currentBuffer[i];
+      } else {
+        sum_energy -= currentBuffer[i];
+      }
     }
+
+    avg_energy = sum_energy / INMPBUFFER_SIZE;
+    debug_1 = true;
+    
+
+
 
     if (xSemaphoreTake(audio_mutex, portMAX_DELAY) == pdTRUE) {
 
@@ -313,8 +343,13 @@ void audio_read(void *parameter) {
 
       debug_2 = true;
       xSemaphoreGive(audio_mutex);
-
-      xSemaphoreGive(audio_ready_sem);
+      
+      if (avg_energy > cri_energy || is_speaking > 0) {
+        is_speaking = 20; // Wait for next voice(0.064 * 20 = 1.28s)
+        xSemaphoreGive(audio_ready_sem);
+        is_speaking--;
+      }
+      
     }
     
   }

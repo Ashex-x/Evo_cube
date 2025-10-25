@@ -6,28 +6,29 @@ class Deepseek_api:
         self.url = "https://api.deepseek.com/v1/chat/completions"
 
 
-    def initDeepseek(self):
+    def launch_Deepseek(self, content):
+        
+        content = content + "\nPlease pick up one emoji(just one word) to reply:[Smile, Cry, Angry, Grin] \nIf you don't Know which emoji to choose, just reply [None]"
+        print(content)
 
         headers = {
             "Content-Type": "application/json",
             "Authorization": f"Bearer {self.apiKey}"
         }
-
         data = {
             "model": "deepseek-chat",
             "messages": [
-                {"role": "user", "content": "Do you think a jok is really fun? Please pick up one emoji(just one word) to reply:[Smile, Cry, Angry, Grin]"}
+                {"role": "user", "content": content}
             ],
             "temperature": 0.2,
-            "max_tokens": 200
+            "max_tokens": 200,
+            "stream": False
         }
-
         response = requests.post(self.url, headers=headers, json=data)
+
         result = response.json()
-
         print(response.status_code)
-        print(result["choices"][0]["message"]["content"])
-
-if (__name__ == "__main__"):
-    dpsk = Deepseek_api()
-    dpsk.initDeepseek()
+        emoji = result["choices"][0]["message"]["content"]
+        
+        return emoji
+            

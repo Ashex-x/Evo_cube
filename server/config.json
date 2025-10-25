@@ -2,7 +2,7 @@
     "Whisper": {
         "host": "0.0.0.0",
         "port": 13579,
-        "gain": 8,
+        "gain": 1,
         "model_size": "base",
         "chunk_size": 80000
     }

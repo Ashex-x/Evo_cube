@@ -14,15 +14,18 @@ import tempfile
 import os
 import torch
 
+import dpsk_api
+
 
 class Whisper:
-    def __init__(self, host, port, gain, model_size, chunk_size):
+    def __init__(self, host, port, gain, model_size, chunk_size, LLM):
         self.host = host
         self.port = port
         self.gain = gain
         self.chunk_size = chunk_size
         self.running = False
         self.is_cuda = torch.cuda.is_available()
+        self.LLM = LLM
 
         print(f"Loading Whisper {model_size} model...")
         self.model = whisper.load_model(model_size)
@@ -203,17 +206,18 @@ class Whisper:
                     if text:
                         status = "FINAL" if is_final else "PARTIAL"
                         print(f"Whisper [{status}]: {text}")
-                        
-                        # 发送识别结果给客户端
+
+                        # Send result
+                        emoji = self.LLM.launch_Deepseek(text)
+                        print(emoji)
+
                         try:
-                            socket.send(f"ASR:{text}\n".encode('utf-8'))
+                            socket.send(f"Island:{emoji}\n".encode('utf-8'))
                         except:
-                            print("Failed to send ASR result to client")
-                    else:
-                        print("Whisper returned empty text")
+                            print("Failed to send ASR/LLM result to client")
                         
                 finally:
-                    # 删除临时文件
+                    # Delete temp file
                     try:
                         os.unlink(temp_filename)
                     except:
@@ -229,6 +233,9 @@ class Whisper:
         if hasattr(self, 'server'):
             self.server.close()
 
+    def fetch(self):
+        return self.emoji
+
 
 if __name__ == "__main__":
     config_path = os.path.join(os.path.dirname(__file__), 'config.json')
@@ -242,10 +249,23 @@ if __name__ == "__main__":
     model_size = config['Whisper']['model_size']
     chunk_size = config['Whisper']['chunk_size']
 
-    Island = Whisper(host=host, port=port, gain=gain, model_size=model_size, chunk_size=chunk_size)
+    dpsk = dpsk_api.Deepseek_api()
+    Island = Whisper(host=host, port=port, gain=gain, model_size=model_size, chunk_size=chunk_size, LLM=dpsk)
 
     try:
         Island.launch_server()
+
+        while True:
+            print("11")
+            if Island.content:
+                print("\nContent sended")
+                emoji = dpsk.launch_Deepseek(Island.content)
+
+                
     except KeyboardInterrupt:
         print("Shutting down server...")
         Island.stop_server()
+    
+    
+
+            

@@ -16,10 +16,10 @@ class Deepseek_api:
         data = {
             "model": "deepseek-chat",
             "messages": [
-                {"role": "user", "content": "Explain quantum computing in simple terms."}
+                {"role": "user", "content": "Do you think a jok is really fun? Please pick up one emoji(just one word) to reply:[Smile, Cry, Angry, Grin]"}
             ],
-            "temperature": 0.7,
-            "max_tokens": 500
+            "temperature": 0.2,
+            "max_tokens": 200
         }
 
         response = requests.post(self.url, headers=headers, json=data)

@@ -1,172 +1,251 @@
-# Lanch my server of FunASR and deepseek
-# Deepseek API key: sk-f7efbc5143204001aa97633dd04310e2
+# Lanch my server of OpenAI_whisper and deepseek
+# Deepseek API key: sk-f7efbc5143204001aa97633dd04310e2 (Don't use my API key without permission)
 # Set powershell if you are using WSL2: 
 # netsh interface portproxy add v4tov4 listenport=13579 listenaddress=0.0.0.0 connectport=13579 connectaddress=<hostname -I>
 
 import socket
 import struct
-import torch
 import numpy as np
-from funasr import AutoModel
+import whisper
+import json
+import threading
+import wave
+import tempfile
+import os
+import torch
 
-class Server:
-    def __init__(self, host='0.0.0.0', port=13579):
+
+class Whisper:
+    def __init__(self, host, port, gain, model_size, chunk_size):
         self.host = host
         self.port = port
-        self.sample_rate = 16000
-        
-    def lanchServer(self):
-        # Init server
+        self.gain = gain
+        self.chunk_size = chunk_size
+        self.running = False
+        self.is_cuda = torch.cuda.is_available()
+
+        print(f"Loading Whisper {model_size} model...")
+        self.model = whisper.load_model(model_size)
+        print(f"Whisper model loaded successfully!")
+
+    def launch_server(self):
+        # Initialize socket
         self.server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         self.server.bind((self.host, self.port))
-        self.server.listen(1) # max clients
-        print(f"Lisening: {self.host}:{self.port}")
-        
-        return self.server
-        
+        self.server.listen(5)
+        self.server.settimeout(1.0)
 
-class FunASR:
-    
-    def __init__(self, server):
-        self.server = server
+        self.running = True
+        print(f"Whisper Audio Server started on {self.host}:{self.port}")
+        print(f"Audio gain: {self.gain}x")
 
-        # init FunASR
-        print("Loading FunASR model...")
-
-        is_cuda = torch.cuda.is_available()
-        print(f"CUDA Available to PyTorch: {is_cuda}")
-        self.model = AutoModel(
-            model="paraformer-en",                      # English model
-            vad_model=None,
-            vad_model="fsmn-vad",                       # Voice activity detection
-            punc_model="ct-punc",                       # Punctuation
-            streaming=True,
-            device="cuda:0",
-            disable_update=True
-        )
-        print("Model loaded successfully!")
+        client_counter = 0
         
-    def start_receive(self):
+        while self.running:
+            try:
+                client_socket, client_addr = self.server.accept()
+                client_counter += 1
+                
+                print(f"Client #{client_counter} connected from {client_addr}")
+                
+                client_thread = threading.Thread(
+                    target=self.handle_client,
+                    args=(client_socket, client_addr, client_counter)
+                )
+                client_thread.daemon = True
+                client_thread.start()
+                
+            except socket.timeout:
+                continue
+            except Exception as e:
+                if self.running:
+                    print(f"Server error: {e}")
         
-        # Wait for client to connect
-        print("Waiting for client.")
-        client, addr = self.server.accept()
-        print(f"Connected by {addr}")
-        # Greet client
-        client.send("\nWelcome to Ashex's island".encode('utf-8'))
+        print("Server stopped")
 
-        while True:
-            
-            self.handle_client(client)
-    
-    def handle_client(self, client):
-        asr_cache = {}
+    def handle_client(self, client_socket, client_addr, client_id):
+        print(f"\nConnected by [addr]: {client_addr}")
+        process_chunk_size = self.chunk_size
 
         try:
-            # Receive PCM header
-            header_data = client.recv(16)
-            if len(header_data) == 16:
-                magic, sample_rate, channels, bits_per_sample, datasize = \
-                    struct.unpack('<IIHHI', header_data)
-                
-                if magic == 0x50434D31:  # Verify .magic
-
-                    if sample_rate != 16000 or bits_per_sample != 16 or channels != 1:
-                        print("Error: Model requires 16k Hz, 16-bit, mono audio.")
-                        client.send("Error: Invalid audio format. Requires 16k/16bit/mono.".encode('utf-8'))
-                        return
-                    
-                    print(f"Audio stream: {sample_rate}Hz, {channels}ch, {bits_per_sample}bit")
+            header_data = self.recv_exact(client_socket, 16)
+            if not header_data or len(header_data) != 16:
+                print(f"Client #{client_id}: Invalid or missing header")
+                return
             
-            # Audio buffer
-            audio_buffer = bytearray()
-            process_chunk_size = 96000
+            magic, sample_rate, channels, bits_per_sample, datasize = \
+                struct.unpack('<IIHHI', header_data)
+            
+            print(f"Client #{client_id} PCM Header:")
+            print(f"  Magic: 0x{magic:08X}")
+            print(f"  Sample Rate: {sample_rate} Hz")
+            print(f"  Channels: {channels}")
+            print(f"  Bits per Sample: {bits_per_sample}")
+            print(f"  Data Size: {datasize} bytes")
 
-            while True:
-                data = client.recv(2048)  # Receive data
-                if not data:
-                    if len(audio_buffer) > 0:
-                        # Convert bytes to a 1D NumPy array of 16-bit signed integers
-                        audio_np = np.frombuffer(audio_buffer, dtype=np.int16) 
-                        self._process_chunk(audio_np, asr_cache, client, is_final=True)
-                    else:
-                        # If the buffer is empty, just send the final signal
-                        self._process_chunk(np.array([], dtype=np.int16), asr_cache, client, is_final=True)
+            if magic != 0x50434D31:
+                print(f"Client #{client_id}: Invalid magic number")
+                client_socket.send(b"ERROR: Invalid PCM header magic")
+                return
+            
+            if sample_rate != 16000 or channels != 1 or bits_per_sample != 16:
+                print(f"Client #{client_id}: Unsupported audio format")
+                error_msg = f"ERROR: Requires 16kHz, mono, 16-bit. Got {sample_rate}Hz, {channels}ch, {bits_per_sample}bit"
+                client_socket.send(error_msg.encode('utf-8'))
+                return
+            
+            byte_buffer = bytearray()
+            audio_buffer = np.array([], dtype=np.int16)
 
-                    break
-                
-                audio_buffer.extend(data)
+            while self.running:
+                try:
+                    data = client_socket.recv(4096)
+                    if not data:
+                        break
+                    
+                    byte_buffer.extend(data)
 
-                # Process the audio in fixed-size chunks
-                while len(audio_buffer) >= process_chunk_size:
-                    # Extract a chunk for processing (ensure it's an even number of bytes for int16)
-                    chunk_bytes = audio_buffer[:process_chunk_size]
-                    audio_buffer = audio_buffer[process_chunk_size:]
-                    
-                    # Convert bytes to a 1D NumPy array of 16-bit signed integers
-                    audio_np = np.frombuffer(chunk_bytes, dtype=np.int16) 
-                    
-                    # Process the chunk as a non-final segment
-                    self._process_chunk(audio_np, asr_cache, client, is_final=False)
+                    while len(byte_buffer) >= 2:
+                        processable_bytes = len(byte_buffer) - (len(byte_buffer) % 2)
+                        if processable_bytes < 2:
+                            break
 
-                """
-                if len(audio_buffer) >= process_chunk_size:
-                    # Convert to bytes
-                    audio_data = bytes(audio_buffer)
-                    
-                    # print(f"Recieve: {audio_data}")
-                    
-                    # Start FunASR
-                    result = self.model.generate(input=audio_data, language="en")
-                    
-                    if result and len(result) > 0:
-                        text = result[0].get('text', '').strip()
-                        if text:
-                            print(f"Result: {text}")
-                    
+                        byte_chunk = bytes(byte_buffer[:processable_bytes])
+                        audio_chunk = np.frombuffer(byte_chunk, dtype=np.int16)
+
+                        enhanced_audio = self.apply_gain(audio_chunk)
+                        audio_buffer = np.concatenate([audio_buffer, enhanced_audio])
+
+                        byte_buffer = byte_buffer[processable_bytes:]
+
+                        while len(audio_buffer) >= process_chunk_size:
+                            whisper_chunk = audio_buffer[:process_chunk_size]
+                            audio_buffer = audio_buffer[process_chunk_size:]
                             
-                    # consistent recognition
-                    keep_size = 8000  # 0.25s context
-                    audio_buffer = audio_buffer[-keep_size:] if len(audio_buffer) > keep_size else bytearray()
-                """
-                    
+                            # Apply Whisper
+                            self.apply_whisper(whisper_chunk, client_socket)
+
+                except socket.timeout:
+                    client_socket.settimeout(1.0)
+                    continue
+                except Exception as e:
+                    print(f"Client #{client_id} receive error: {e}")
+                    break
+        
+            """
+            if len(audio_buffer) > 0:
+                print(f"Client #{client_id}: Processing final {len(audio_buffer)} enhanced samples")
+                self.apply_whisper(audio_buffer, client_socket, is_final=True)
+            """
         except Exception as e:
-            print(f"Client handling error: {e}")
-        finally:
-            client.close()
-            print("Client disconnected")
+            print(f"Client #{client_id} handling error: {e}")
 
-    def _process_chunk(self, audio_np, cache, client, is_final):
+    def recv_exact(self, sock, size):
+        data = b''
+        while len(data) < size:
+            try:
+                chunk = sock.recv(size - len(data))
+                if not chunk:
+                    return None
+                data += chunk
+            except socket.timeout:
+                continue
+            except:
+                return None
+        return data
+    
+    def apply_gain(self, audio):
+        if len(audio) == 0:
+            return audio
+            
+        audio_float = audio.astype(np.float32)
+        audio_float = audio_float * self.gain
+
+        max_val = np.max(np.abs(audio_float))
+        if max_val > 32767:
+            audio_float = audio_float * (32767 / max_val)
+            print(f"  Applied compression to prevent clipping")
         
-        if audio_np.size > 0:
-        # Scale the 16-bit integers (range -32768 to 32767) to a float range (-1.0 to 1.0)
-            audio_np = audio_np.astype(np.float32) / 32768.0
+        return np.clip(audio_float, -32768, 32767).astype(np.int16)
+        # Enhance audio
 
-        # Call generate with the NumPy array input, the cache, and the is_final flag
-        # The result will contain the text transcription up to this point.
-        result = self.model.generate(
-            input=audio_np, 
-            cache=cache, 
-            is_final=is_final, 
-            language="en"
-        )
-        
-        # FunASR streaming returns 'text' in the result dictionary.
-        if result and len(result) > 0:
-            text = result[0].get('text', '').strip()
-            # In streaming mode, 'text' often contains the partial result.
-            if text:
-                # You might only want to print/send the text if it's the final result 
-                # or if you want to show real-time partial results.
-                # For simplicity, we print any received text.
-                print(f"[{'FINAL' if is_final else 'PARTIAL'}] Result: {text}")
 
-                # Optional: Send the result back to the client
-                client.send(f"ASR:{text}\n".encode('utf-8'))
+    def apply_whisper(self, audio, socket, is_final=False):
+
+        try:
+            if audio.size > 0:
+                # Print info
+                max_amp = np.abs(audio).max()
+                print(f"\nWhisper processing: {len(audio)} samples, max amplitude: {max_amp}")
+                
+                # Create temp wav file
+                with tempfile.NamedTemporaryFile(suffix='.wav', delete=False) as temp_file:
+                    temp_filename = temp_file.name
+                
+                # Save wav file
+                with wave.open(temp_filename, 'wb') as wav_file:
+                    wav_file.setnchannels(1) 
+                    wav_file.setsampwidth(2) # Int16 for 2 bytes
+                    wav_file.setframerate(16000)
+                    wav_file.writeframes(audio.tobytes())
+                
+                try:
+                    # Use Whisper to recongnize
+                    result = self.model.transcribe(
+                        temp_filename,
+                        language="en",
+                        fp16=True if self.is_cuda else False  # Set False if use CPU
+                    )
+                    
+                    text = result["text"].strip()
+                    
+                    if text:
+                        status = "FINAL" if is_final else "PARTIAL"
+                        print(f"Whisper [{status}]: {text}")
+                        
+                        # 发送识别结果给客户端
+                        try:
+                            socket.send(f"ASR:{text}\n".encode('utf-8'))
+                        except:
+                            print("Failed to send ASR result to client")
+                    else:
+                        print("Whisper returned empty text")
+                        
+                finally:
+                    # 删除临时文件
+                    try:
+                        os.unlink(temp_filename)
+                    except:
+                        pass
+
+        except Exception as e:
+            print(f"Whisper processing error: {e}")
+            import traceback
+            traceback.print_exc()
+
+    def stop_server(self):
+        self.running = False
+        if hasattr(self, 'server'):
+            self.server.close()
+
 
 if __name__ == "__main__":
-    server = Server()
-    island = server.lanchServer()
-    funasr_model = FunASR(island)
-    funasr_model.start_receive()
+    config_path = os.path.join(os.path.dirname(__file__), 'config.json')
+
+    with open(config_path, 'r', encoding='utf-8') as config_json:
+        config = json.load(config_json)
+
+    host = config['Whisper']['host']
+    port = config['Whisper']['port']
+    gain = config['Whisper']['gain']
+    model_size = config['Whisper']['model_size']
+    chunk_size = config['Whisper']['chunk_size']
+
+    Island = Whisper(host=host, port=port, gain=gain, model_size=model_size, chunk_size=chunk_size)
+
+    try:
+        Island.launch_server()
+    except KeyboardInterrupt:
+        print("Shutting down server...")
+        Island.stop_server()

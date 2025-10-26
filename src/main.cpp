@@ -249,7 +249,7 @@ void audio_read(void *parameter) {
 
   // Initializing VAD(Voice Acivity Detection)
   Serial.print("\nKeep silence for a moment.Inintializing VAD.");
-  for (int j = 0; j < 10; j++) // read 10 times
+  for (int j = 0; j < 20; j++) // read 10 times
   {
     esp_err_t read_err = i2s_read(I2S_PORT, raw_samples, INMPBUFFER_SIZE * sizeof(int32_t), &bytes_read, portMAX_DELAY);
     
@@ -294,10 +294,10 @@ void audio_read(void *parameter) {
       }
     }
 
-    Serial.printf("\nVAD process: %d %%", (j+1)*10);
+    Serial.printf("\nVAD process: %d %%", (j+1)*5);
   }
   
-  avg_energy = (int)(sum_energy / (INMPBUFFER_SIZE*9));
+  avg_energy = (int)(sum_energy / (INMPBUFFER_SIZE*19));
   int cri_energy = 4 * avg_energy;
   Serial.print("\nVAD energy critical point:");
   Serial.print(cri_energy);
@@ -341,7 +341,6 @@ void audio_read(void *parameter) {
       sendBuffer = currentBuffer;
       currentBuffer = temp;
 
-      debug_2 = true;
       xSemaphoreGive(audio_mutex);
       
       if (avg_energy > cri_energy || is_speaking > 0) {

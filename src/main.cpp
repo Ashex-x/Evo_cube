@@ -27,7 +27,7 @@ void initLED();
 void audio_i2s();
 void audio_read(void *parameter);
 void initPCM();
-void led_screen(const int num_pixels);
+void led_screen(int emoji_i);
 void initWifi();
 void connectServer();
 void audio_send(void *parameter);
@@ -101,8 +101,6 @@ void setup() {
 }
 
 void loop() {
-  led_screen(NUMS_WS2812B);
-  
   // Connection block
   /*
   if (millis() - lastStatus > 5000) {
@@ -126,7 +124,8 @@ void loop() {
       Serial.print("\nServer: ");
       Serial.println(response);
       
-      int emoji = findWord(response); 
+      int emoji = findWord(response);
+      led_screen(emoji);
     }
   }
 }
@@ -445,7 +444,7 @@ int findWord(String response) {
   const int emoji_count = 5;
 
   const char *str = response.c_str();
-  
+
   for (int i = 0; i < emoji_count; i++) {
     char *pos = strstr(str, emojis[i]);
 

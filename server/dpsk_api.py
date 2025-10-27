@@ -8,7 +8,7 @@ class Deepseek_api:
 
     def launch_Deepseek(self, content):
         
-        content = content + "\nPlease pick up one emoji(just one word) to reply:[Smile, Cry, Angry, Grin] \nIf you don't Know which emoji to choose, just reply [None]"
+        content = content + "\nPlease pick up one emoji(just one word) to reply:[Smile, Sad, Cry, Wear sunglasses, Love] \nIf you don't Know which emoji to choose, just reply [None]"
         print(content)
 
         headers = {

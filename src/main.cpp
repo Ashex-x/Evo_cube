@@ -13,12 +13,14 @@
 #include <freertos/semphr.h>
 #include <lwip/sockets.h>
 
+#include <FastLED.h>
+#include <emoji.h>
+#include <wave.h>
+#include <LEDState.h>
+
 WiFiClient client;
 TaskHandle_t audioReadHandle;
 TaskHandle_t audioSendHandle;
-
-Adafruit_NeoPixel WS2812B(NUMS_WS2812B, DIN_WS2812B, NEO_GRB + NEO_KHZ800); // init WS2812
-
 
 // put function declarations here:
 void initLED();
@@ -29,6 +31,7 @@ void led_screen(const int num_pixels);
 void initWifi();
 void connectServer();
 void audio_send(void *parameter);
+int findWord(String response);
 
 // Global parameter for audio
 int16_t samples_a[INMPBUFFER_SIZE];
@@ -122,15 +125,29 @@ void loop() {
       String response = client.readStringUntil('\n');
       Serial.print("\nServer: ");
       Serial.println(response);
+      
+      int emoji = findWord(response); 
     }
   }
 }
 
 
-// Put function definitions here:
+// --------------Function definitions--------------
 void initLED() {
-  WS2812B.begin();
-  WS2812B.setBrightness(20);
+  // init FastLED
+  FastLED.addLeds<WS2812, DIN_WS2812B, GRB>(leds, NUMS_WS2812B);
+  FastLED.clear();
+  FastLED.show();
+  
+  delay(1000);
+  drawCheckerboard(CRGB::Cyan, CRGB::Magenta, 100);
+  drawCheckerboard(CRGB::Yellow, CRGB::Purple, 100);
+  drawCheckerboard(CRGB::DarkGreen, CRGB::Gold, 100);
+  drawCross(CRGB::Yellow, 1000);
+  drawCross(CRGB::Lavender, 1000);
+  blinkAll(CRGB::Green,100);
+  colorWipe(CRGB::DarkBlue,100);
+  currentState = STATE_START;
 }
 
 void initWifi() {
@@ -155,30 +172,46 @@ void connectServer() {
   initPCM();
 }
 
-void led_screen(const int num_pixels) {
-  //TODO: finish this block
+void led_screen(int emoji_i) {
+  // Smile
+  if(emoji_i == 1) {
+    currentState = STATE_SMILE;
+    currentSubState = SUB_FIRST;  
+    subStateStartTime = millis();
+  } 
+  // Sad
+  else if (emoji_i == 2) {
+    currentState = STATE_SAD;
+    currentSubState = SUB_FIRST;
+    subStateStartTime = millis();
+  } 
+  // Cry
+  else if (emoji_i == 3) {
+    currentState = STATE_CRY;
+    currentSubState = SUB_FIRST;
+    subStateStartTime = millis();
+  } 
+  // Wear sunglasses
+  else if (emoji_i == 4) {
+    currentState = STATE_SUN;
+    currentSubState = SUB_FIRST;
+    subStateStartTime = millis();
+  } 
+  // Smile with hearts
+  else if (emoji_i == 5) {
+    currentState = STATE_BOW;
+    currentSubState = SUB_FIRST;
+    subStateStartTime = millis();
+  }
+  // Backward 
+  else if (emoji_i == 0) {
+    currentState = INIT;
+    currentSubState = SUB_FIRST;
+    subStateStartTime = millis();
+  }
   
-  WS2812B.clear();
-  WS2812B.show();
-  delay(2000);
-  WS2812B.setPixelColor(9 , WS2812B.Color(255, 21, 21));
-  WS2812B.setPixelColor(10, WS2812B.Color(255, 21, 21));
-  WS2812B.setPixelColor(13, WS2812B.Color(255, 21, 21));
-  WS2812B.setPixelColor(14, WS2812B.Color(255, 21, 21));
-  WS2812B.setPixelColor(16, WS2812B.Color(255, 21, 21));
-  WS2812B.setPixelColor(19, WS2812B.Color(255, 21, 21));
-  WS2812B.setPixelColor(20, WS2812B.Color(255, 21, 21));
-  WS2812B.setPixelColor(23, WS2812B.Color(255, 21, 21));
-  WS2812B.setPixelColor(24, WS2812B.Color(255, 21, 21));
-  WS2812B.setPixelColor(31, WS2812B.Color(255, 21, 21));
-  WS2812B.setPixelColor(33, WS2812B.Color(255, 21, 21));
-  WS2812B.setPixelColor(38, WS2812B.Color(255, 21, 21));
-  WS2812B.setPixelColor(42, WS2812B.Color(255, 21, 21));
-  WS2812B.setPixelColor(45, WS2812B.Color(255, 21, 21));
-  WS2812B.setPixelColor(51, WS2812B.Color(255, 21, 21));
-  WS2812B.setPixelColor(52, WS2812B.Color(255, 21, 21));
-  WS2812B.show();
-  delay(2000);
+  executeCurrentState();//子状态
+  FastLED.show();
   
 }
 
@@ -354,7 +387,6 @@ void audio_read(void *parameter) {
   }
 }
 
-
 void audio_send(void *parameter) {
   while (xSemaphoreTake(audio_ready_sem, portMAX_DELAY) == pdTRUE)
   {
@@ -402,4 +434,36 @@ void audio_send(void *parameter) {
       }
     }*/
   }
+}
+
+int findWord(String response) {
+  
+  
+  if (response.length() == 0) return 0;
+  
+  const char *emojis[] = {"Smile", "Sad", "Cry", "Wear sunglasses", "Smile with hearts"};
+  const int emoji_count = 5;
+
+  const char *str = response.c_str();
+  
+  for (int i = 0; i < emoji_count; i++) {
+    char *pos = strstr(str, emojis[i]);
+
+    while (pos != NULL) {
+      // Check the start of a word
+      int start = (pos == str) || !isalpha(*(pos -1));
+      // Check the end of a word
+      pos += strlen(emojis[i]);
+
+      int end = !isalpha(*pos) || (*pos == '\0');
+
+      if (start && end) {
+        return i + 1;
+      }
+
+      pos = strstr(pos + 1, emojis[i]);
+    }
+  }
+
+  return 0;
 }

@@ -8,7 +8,8 @@ class Deepseek_api:
 
     def launch_Deepseek(self, content):
         
-        content = content + "\nPlease pick up one emoji(just one word) to reply:[Smile, Sad, Cry, Wear sunglasses, Love] \nIf you don't Know which emoji to choose, just reply [None]"
+        # content += "\nPlease pick up one emoji(just one word) to reply(1st line):[Smile, Sad, Cry, Wear sunglasses, Love] \nIf you don't Know which emoji to choose, just reply [None]"
+        # content += "\nAnd there is a LED you can control, please reply(2nd line):Brightness[Down, Up](choose one), color"
         print(content)
 
         headers = {
@@ -18,9 +19,13 @@ class Deepseek_api:
         data = {
             "model": "deepseek-chat",
             "messages": [
+                {"role": "system", "content": "Reply format(all blackets are not allowed):\n"
+                "1st line:Pick up just one emoji to reply[Smile, Sad, Cry, Wear sunglasses, Love](if you don't know which one to choose, just reply[None])\n"
+                # "2nd line:(you can control a LED)Swhich[on, off], Brightness[+30, +10, -10, -30], color"
+                },
                 {"role": "user", "content": content}
             ],
-            "temperature": 0.2,
+            "temperature": 0.3,
             "max_tokens": 200,
             "stream": False
         }

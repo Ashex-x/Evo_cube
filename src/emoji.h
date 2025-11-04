@@ -7,12 +7,12 @@
 #define DATA_PIN 2         // 更换为GPIO 2，这是ESP32上的有效引脚
 int getIndex(int x, int y);
 
-extern const CRGB Purple = CRGB(128, 0, 128);    // 紫色轮廓
-const CRGB Yellow = CRGB(255, 255, 0);    // 黄色填充
-const CRGB Blue = CRGB(0, 0, 255);        // 蓝色元素
-const CRGB Red = CRGB(255, 0, 0);         // 红色装饰
-const CRGB Black = CRGB(0, 0, 0);         // 黑色细节
-const CRGB White = CRGB(255, 255, 255);
+extern const CRGB P = CRGB(128, 0, 128);    // 紫色轮廓
+const CRGB Y = CRGB(255, 255, 0);    // 黄色填充
+const CRGB B = CRGB(0, 0, 255);        // 蓝色元素
+const CRGB R = CRGB(255, 0, 0);         // 红色装饰
+const CRGB K = CRGB(0, 0, 0);         // 黑色细节
+const CRGB W = CRGB(255, 255, 255);
 // 定义LED数组
 CRGB leds[NUM_LEDS];
 
@@ -89,53 +89,22 @@ void  Smile()
 {
 const CRGB pattern[16][16] = 
 {
-  {
-     Yellow, Yellow, Yellow, Yellow, Yellow, Yellow, Yellow, Yellow,
-     Yellow, Yellow, Yellow, Yellow, Yellow, Yellow, Yellow, Yellow},
-    {Yellow, Yellow, Yellow, Yellow, Yellow, Purple, Purple, Purple,
-     Purple, Purple, Purple, Yellow, Yellow, Yellow, Yellow, Yellow},
-     
-    {Yellow, Yellow, Yellow, Yellow, Purple, Yellow, Yellow, Yellow,
-     Yellow, Yellow, Yellow, Purple, Yellow, Yellow, Yellow, Yellow},
-   
-    {Yellow, Yellow, Yellow, Purple, Yellow, Yellow, Yellow, Yellow,
-     Yellow, Yellow, Yellow, Yellow, Purple, Yellow, Yellow, Yellow},
-
-    {Yellow, Yellow, Purple, Yellow, Yellow, Yellow, Yellow, Yellow,
-     Yellow, Yellow, Yellow, Yellow, Yellow, Purple, Yellow, Yellow},
-
-    {Yellow, Purple, Yellow, Yellow, Yellow, Purple, Yellow, Yellow,
-     Yellow, Yellow, Purple, Yellow, Yellow, Yellow, Purple, Yellow},
-
-    {Yellow, Purple, Yellow, Yellow, Yellow, Purple, Yellow, Yellow,
-     Yellow, Yellow, Purple, Yellow, Yellow, Yellow, Purple, Yellow},
-
-    {Yellow, Purple, Yellow, Yellow, Yellow, Yellow, Yellow, Yellow,
-     Yellow, Yellow, Yellow, Yellow, Yellow, Yellow, Purple, Yellow},
-
-    {Yellow, Purple, Yellow, Yellow, Purple, Yellow, Yellow, Yellow,
-     Yellow, Yellow, Yellow, Yellow, Purple, Yellow, Yellow, Purple},
-
-    {Yellow, Purple, Yellow, Yellow, Yellow, Purple, Yellow, Yellow,
-     Yellow, Yellow, Purple, Yellow, Yellow, Yellow, Purple, Yellow},
-
-    {Yellow, Purple, Yellow, Yellow, Yellow, Yellow, Purple, Purple,
-     Purple, Purple, Yellow, Yellow, Yellow, Yellow, Purple, Yellow},
-
-    {Yellow, Yellow, Purple, Yellow, Yellow, Yellow, Yellow, Yellow,
-     Yellow, Yellow, Yellow, Yellow, Yellow, Purple, Yellow, Yellow},
-
-    {Yellow, Yellow, Yellow, Purple, Yellow, Yellow, Yellow, Yellow,
-     Yellow, Yellow, Yellow, Yellow, Purple, Yellow, Yellow, Yellow},
-
-    {Yellow, Yellow, Yellow, Yellow, Purple, Yellow, Yellow, Yellow,
-     Yellow, Yellow, Yellow, Purple, Yellow, Yellow, Yellow, Yellow},
-
-    {Yellow, Yellow, Yellow, Yellow, Yellow, Purple, Purple, Purple,
-     Purple, Purple, Purple, Yellow, Yellow, Yellow, Yellow, Yellow},
-
-    {Yellow, Yellow, Yellow, Yellow, Yellow, Yellow, Yellow, Yellow,
-     Yellow, Yellow, Yellow, Yellow, Yellow, Yellow, Yellow, Yellow}
+  {Y, Y, Y, Y, Y, Y, Y, Y, Y, Y, Y, Y, Y, Y, Y, Y},
+  {Y, Y, Y, Y, Y, P, P, P, P, P, P, Y, Y, Y, Y, Y},
+  {Y, Y, Y, Y, P, Y, Y, Y, Y, Y, Y, P, Y, Y, Y, Y},
+  {Y, Y, Y, P, Y, Y, Y, Y, Y, Y, Y, Y, P, Y, Y, Y},
+  {Y, Y, P, Y, Y, Y, Y, Y, Y, Y, Y, Y, Y, P, Y, Y},
+  {Y, P, Y, Y, Y, P, Y, Y, Y, Y, P, Y, Y, Y, P, Y},
+  {Y, P, Y, Y, Y, P, Y, Y, Y, Y, P, Y, Y, Y, P, Y},
+  {Y, P, Y, Y, Y, Y, Y, Y, Y, Y, Y, Y, Y, Y, P, Y},
+  {Y, P, Y, Y, Y, Y, Y, Y, Y, Y, Y, Y, Y, Y, P, Y},
+  {Y, P, Y, P, Y, Y, Y, Y, Y, Y, Y, Y, P, Y, P, Y},
+  {Y, P, Y, Y, P, Y, Y, Y, Y, Y, Y, P, Y, Y, P, Y},
+  {Y, Y, P, Y, Y, P, P, P, P, P, P, Y, Y, P, Y, Y},
+  {Y, Y, Y, P, Y, Y, Y, Y, Y, Y, Y, Y, P, Y, Y, Y},
+  {Y, Y, Y, Y, P, Y, Y, Y, Y, Y, Y, P, Y, Y, Y, Y},
+  {Y, Y, Y, Y, Y, P, P, P, P, P, P, Y, Y, Y, Y, Y},
+  {Y, Y, Y, Y, Y, Y, Y, Y, Y, Y, Y, Y, Y, Y, Y, Y}
   };
 for(int y = 0; y < MATRIX_HEIGHT; y++) {
     for(int x = 0; x < MATRIX_WIDTH; x++) {
@@ -151,32 +120,22 @@ for(int y = 0; y < MATRIX_HEIGHT; y++) {
 void sad()
 {
  const CRGB pattern[16][16] = {
-    // 第0行：全白
-   {White, White, White, White, White, White, White, White, White, White, White, White, White, White, White, White},
-   // 第 1 行：白、白、白、白、白、蓝、蓝、蓝、蓝、蓝、蓝、白、白、白、白、白
-   {White, White, White, White, White, Blue, Blue, Blue, Blue, Blue, Blue, White, White, White, White, White},// 第 2 行：白、白、白、白、蓝、黄、黄、黄、黄、黄、黄、蓝、白、白、白、白{White, White, White, White, Blue, Yellow, Yellow, Yellow, Yellow, Yellow, Yellow, Blue, White, White, White, White},
-   // 第 3 行：白、白、白、蓝、黄、黄、黄、黄、黄、黄、黄、黄、蓝、白、白、白
-   {White, White, White, Blue, Yellow, Yellow, Yellow, Yellow, Yellow, Yellow, Yellow, Yellow, Blue, White, White, White},
-   // 第 4 行：白、白、蓝、黄、黄、黄、黄、黄、黄、黄、黄、黄、黄、蓝、白、白
-   {White, White, Blue, Yellow, Yellow, Yellow, Yellow, Yellow, Yellow, Yellow, Yellow, Yellow, Yellow, Blue, White, White},// 第 5 行：白、蓝、黄、黄、蓝、黄、黄、黄、黄、蓝、黄、黄、黄、蓝、白、白
-   {White, Blue, Yellow, Yellow, Blue, Yellow, Yellow, Yellow, Yellow, Blue, Yellow, Yellow, Yellow, Blue, White, White},
-   // 第 6 行：白、蓝、黄、黄、蓝、黄、黄、黄、黄、蓝、黄、黄、黄、蓝、白、白
-   {White, Blue, Yellow, Yellow, Blue, Yellow, Yellow, Yellow, Yellow, Blue, Yellow, Yellow, Yellow, Blue, White, White},
-   // 第 7 行：白、蓝、黄、黄、黄、黄、黄、黄、黄、黄、黄、黄、黄、蓝、白、白
-   {White, Blue, Yellow, Yellow, Yellow, Yellow, Yellow, Yellow, Yellow, Yellow, Yellow, Yellow, Yellow, Blue, White, White},
-   // 第 8 行：白、蓝、黄、黄、黄、黄、蓝、蓝、蓝、蓝、黄、黄、黄、蓝、白、白
-   {White, Blue, Yellow, Yellow, Yellow, Yellow, Blue, Blue, Blue, Blue, Yellow, Yellow, Yellow, Blue, White, White},// 第 9 行：白、蓝、黄、黄、蓝、黄、黄、黄、黄、蓝、黄、黄、黄、蓝、白、白{White, Blue, Yellow, Yellow, Blue, Yellow, Yellow, Yellow, Yellow, Yellow, Blue, Yellow, Yellow, Blue, White, White},
-   // 第 10 行：白、蓝、黄、黄、黄、黄、黄、黄、黄、黄、黄、黄、黄、蓝、白、白
-   {White, Blue, Yellow, Yellow, Yellow, Yellow, Yellow, Yellow, Yellow, Yellow, Yellow, Yellow, Yellow, Blue, White, White},
-   // 第 11 行：白、白、蓝、黄、黄、黄、黄、黄、黄、黄、黄、黄、蓝、白、白、白
-   {White, White, Blue, Yellow, Yellow, Yellow, Yellow, Yellow, Yellow, Yellow, Yellow, Yellow, Blue, White, White, White},// 第 12 行：白、白、白、蓝、黄、黄、黄、黄、黄、黄、黄、蓝、白、白、白、白
-   {White, White, White, Blue, Yellow, Yellow, Yellow, Yellow, Yellow, Yellow, Yellow, Blue, White, White, White, White},
-   // 第 13 行：白、白、白、白、蓝、黄、黄、黄、黄、黄、黄、蓝、白、白、白、白
-   {White, White, White, White, Blue, Yellow, Yellow, Yellow, Yellow, Yellow, Yellow, Blue, White, White, White, White},
-   // 第 14 行：白、白、白、白、白、蓝、蓝、蓝、蓝、蓝、蓝、白、白、白、白、白
-   {White, White, White, White, White, Blue, Blue, Blue, Blue, Blue, Blue, White, White, White, White, White},
-   // 第 15 行：全白
-   {White, White, White, White, White, White, White, White, White, White, White, White, White, White, White, White}
+   {W, W, W, W, W, W, W, W, W, W, W, W, W, W, W, W},
+   {W, W, W, W, W, B, B, B, B, B, B, W, W, W, W, W},
+   {W, W, W, W, B, Y, Y, Y, Y, Y, Y, B, W, W, W, W},
+   {W, W, W, B, Y, Y, Y, Y, Y, Y, Y, Y, B, W, W, W},
+   {W, W, B, Y, Y, Y, Y, Y, Y, Y, Y, Y, Y, B, W, W},
+   {W, B, Y, Y, Y, B, Y, Y, Y, Y, B, Y, Y, Y, B, W},
+   {W, B, Y, Y, Y, B, Y, Y, Y, Y, B, Y, Y, Y, B, W},
+   {W, B, Y, Y, Y, Y, Y, Y, Y, Y, Y, Y, Y, Y, B, W},
+   {W, B, Y, Y, Y, Y, Y, Y, Y, Y, Y, Y, Y, Y, B, W},
+   {W, B, Y, Y, Y, B, B, B, B, B, B, Y, Y, Y, B, W},
+   {W, B, Y, Y, B, Y, Y, Y, Y, Y, Y, B, Y, Y, B, W},
+   {W, W, B, Y, Y, Y, Y, Y, Y, Y, Y, Y, Y, B, W, W},
+   {W, W, W, B, Y, Y, Y, Y, Y, Y, Y, Y, B, W, W, W},
+   {W, W, W, W, B, Y, Y, Y, Y, Y, Y, B, W, W, W, W},
+   {W, W, W, W, W, B, B, B, B, B, B, W, W, W, W, W},
+   {W, W, W, W, W, W, W, W, W, W, W, W, W, W, W, W}
 };
 for(int y = 0; y < MATRIX_HEIGHT; y++) {
     for(int x = 0; x < MATRIX_WIDTH; x++) {
@@ -189,38 +148,22 @@ for(int y = 0; y < MATRIX_HEIGHT; y++) {
 }
 void Crying() {  
 const CRGB pattern[16][16] = {
-   // 第0行：白白白白白白黑黑黑黑黑白白白白白
-{White, White, White, White, White, White, Black, Black, Black, Black, Black, White, White, White, White, White},
-// 第1行：白白白白黑黑黄黄黄黄黄黑黑白白白
-{White, White, White, White, Black, Black, Yellow, Yellow, Yellow, Yellow, Yellow, Black, Black, White, White, White},
-// 第2行：白白白黑黄黄黄黄黄黄黄黄黄黑白白
-{White, White, White, Black, Yellow, Yellow, Yellow, Yellow, Yellow, Yellow, Yellow, Yellow, Yellow, Black, White, White},
-// 第3行：白白黑黄黄黄黄黄黄黄黄黄黄黄黑白
-{White, White, Black, Yellow, Yellow, Yellow, Yellow, Yellow, Yellow, Yellow, Yellow, Yellow, Yellow, Yellow, Black, White},
-// 第4行：白白黑黄黄黄黄黄黄黄黄黄黄黄黑白
-{White, White, Black, Yellow, Yellow, Yellow, Yellow, Yellow, Yellow, Yellow, Yellow, Yellow, Yellow, Yellow, Black, White},
-// 第5行：白黑黄黄黑黑黑黑黄黑黑黑黑黄黄黑
-{White, Black, Yellow, Yellow, Black, Black, Black, Black, Yellow, Black, Black, Black, Black, Yellow, Yellow, Black},
-// 第6行：白黑黄黄黑黑白黑黄黑黑白黑黄黄黑
-{White, Black, Yellow, Yellow, Black, Black, White, Black, Yellow, Black, Black, White, Black, Yellow, Yellow, Black},
-// 第7行：白黑黄黄黑白黑黑黄黑白黑黑黄黄黑
-{White, Black, Yellow, Yellow, Black, White, Black, Black, Yellow, Black, White, Black, Black, Yellow, Yellow, Black},
-// 第8行：白黑黄黄蓝蓝黑黑黄黑黑蓝蓝黄黄黑
-{White, Black, Yellow, Yellow, Blue, Blue, Black, Black, Yellow, Black, Black, Blue, Blue, Yellow, Yellow, Black},
-// 第9行：白黑黄蓝蓝黄黄黄黄黄黄黄蓝蓝黄黑
-{White, Black, Yellow, Blue, Blue, Yellow, Yellow, Yellow, Yellow, Yellow, Yellow, Yellow, Blue, Blue, Yellow, Black},
-// 第10行：白白黑黄黄黄黄黄黄黄黄黄黄黄黑白
-{White, White, Black, Yellow, Yellow, Yellow, Yellow, Yellow, Yellow, Yellow, Yellow, Yellow, Yellow, Yellow, Black, White},
-// 第11行：白白黑黄黄黄黄黑黑黑黄黄黄黄黑白
-{White, White, Black, Yellow, Yellow, Yellow, Yellow, Black, Black, Black, Yellow, Yellow, Yellow, Yellow, Black, White},
-// 第12行：白白白黑黄黄黄黄黄黄黄黄黄黑白白
-{White, White, White, Black, Yellow, Yellow, Yellow, Yellow, Yellow, Yellow, Yellow, Yellow, Yellow, Black, White, White},
-// 第13行：白白白白黑黑黄黄黄黄黄黑黑白白白
-{White, White, White, White, Black, Black, Yellow, Yellow, Yellow, Yellow, Yellow, Black, Black, White, White, White},
-// 第14行：白白白白白白黑黑黑黑黑白白白白白
-{White, White, White, White, White, White, Black, Black, Black, Black, Black, White, White, White, White, White},
-// 第15行：白白白白白白白白白白白白白白白白
-{White, White, White, White, White, White, White, White, White, White, White, White, White, White, White, White}
+  {W, W, W, W, W, W, K, K, K, K, K, W, W, W, W, W},
+  {W, W, W, W, K, K, Y, Y, Y, Y, Y, K, K, W, W, W},
+  {W, W, W, K, Y, Y, Y, Y, Y, Y, Y, Y, Y, K, W, W},
+  {W, W, K, Y, Y, Y, Y, Y, Y, Y, Y, Y, Y, Y, K, W},
+  {W, W, K, Y, Y, Y, Y, Y, Y, Y, Y, Y, Y, Y, K, W},
+  {W, K, Y, Y, K, K, K, K, Y, K, K, K, K, Y, Y, K},
+  {W, K, Y, Y, K, K, W, K, Y, K, K, W, K, Y, Y, K},
+  {W, K, Y, Y, K, W, K, K, Y, K, W, K, K, Y, Y, K},
+  {W, K, Y, Y, B, B, K, K, Y, K, K, B, B, Y, Y, K},
+  {W, K, Y, B, B, Y, Y, Y, Y, Y, Y, Y, B, B, Y, K},
+  {W, W, K, Y, Y, Y, Y, Y, Y, Y, Y, Y, Y, Y, K, W},
+  {W, W, K, Y, Y, Y, Y, K, K, K, Y, Y, Y, Y, K, W},
+  {W, W, W, K, Y, Y, Y, Y, Y, Y, Y, Y, Y, K, W, W},
+  {W, W, W, W, K, K, Y, Y, Y, Y, Y, K, K, W, W, W},
+  {W, W, W, W, W, W, K, K, K, K, K, W, W, W, W, W},
+  {W, W, W, W, W, W, W, W, W, W, W, W, W, W, W, W}
 };
 for(int y = 0; y < MATRIX_HEIGHT; y++) {
     for(int x = 0; x < MATRIX_WIDTH; x++) {
@@ -235,38 +178,22 @@ for(int y = 0; y < MATRIX_HEIGHT; y++) {
 
 void Sunglass() {
  const CRGB pattern[16][16] = {
-    // 第1行: 白白白白白白黑黑黑黑黑白白白白白
-    {White, White, White, White, White, White, Black, Black, Black, Black, Black, White, White, White, White, White},
-    // 第2行: 白白白白黑黑黄黄黄黄黄黑黑白白白
-    {White, White, White, White, Black, Black, Yellow, Yellow, Yellow, Yellow, Yellow, Black, Black, White, White, White},
-    // 第3行: 白白白黑黄黄黄黄黄黄黄黄黄黑白白
-    {White, White, White, Black, Yellow, Yellow, Yellow, Yellow, Yellow, Yellow, Yellow, Yellow, Yellow, Black, White, White},
-    // 第4行: 白白黑黄黄黄黄黄黄黄黄黄黄黄黑白
-    {White, White, Black, Yellow, Yellow, Yellow, Yellow, Yellow, Yellow, Yellow, Yellow, Yellow, Yellow, Yellow, Black, White},
-    // 第5行: 白白黑黄黄黄黄黄黄黄黄黄黄黄黑白
-    {White, White, Black, Yellow, Yellow, Yellow, Yellow, Yellow, Yellow, Yellow, Yellow, Yellow, Yellow, Yellow, Black, White},
-    // 第6行: 白黑黑黑黑黑黑黑黑黑黑黑黑黑黑黑
-    {White, Black, Black, Black, Black, Black, Black, Black, Black, Black, Black, Black, Black, Black, Black, Black},
-    // 第7行: 白黑黄黑白白黑黑黑黑白白黑黑黄黑
-    {White, Black, Yellow, Black, White, White, Black, Black, Black, Black, White, White, Black, Black, Yellow, Black},
-    // 第8行: 白黑黄黑白黑黑黑黄黑白黑黑黑黄黑
-    {White, Black, Yellow, Black, White, Black, Black, Black, Yellow, Black, White, Black, Black, Black, Yellow, Black},
-    // 第9行: 白黑黄黄黑黑黑黄黄黄黑黑黑黄黄黑
-    {White, Black, Yellow, Yellow, Black, Black, Black, Yellow, Yellow, Yellow, Black, Black, Black, Yellow, Yellow, Black},
-    // 第10行: 白黑黄黄黄黄黄黄黄黄黄黄黄黄黄黑
-    {White, Black, Yellow, Yellow, Yellow, Yellow, Yellow, Yellow, Yellow, Yellow, Yellow, Yellow, Yellow, Yellow, Yellow, Black},
-    // 第11行: 白白黑黄黄黄黄黄黄黄黄黑黄黄黑白
-    {White, White, Black, Yellow, Yellow, Yellow, Yellow, Yellow, Yellow, Yellow, Yellow, Black, Yellow, Yellow, Black, White},
-    // 第12行: 白白黑黄黄黄黄黑黑黑黑黄黄黄黑白
-    {White, White, Black, Yellow, Yellow, Yellow, Yellow, Black, Black, Black, Black, Yellow, Yellow, Yellow, Black, White},
-    // 第13行: 白白白黑黄黄黄黄黄黄黄黄黄黑白白
-    {White, White, White, Black, Yellow, Yellow, Yellow, Yellow, Yellow, Yellow, Yellow, Yellow, Yellow, Black, White, White},
-    // 第14行: 白白白白黑黑黄黄黄黄黄黑黑白白白
-    {White, White, White, White, Black, Black, Yellow, Yellow, Yellow, Yellow, Yellow, Black, Black, White, White, White},
-    // 第15行: 白白白白白白黑黑黑黑黑白白白白白
-    {White, White, White, White, White, White, Black, Black, Black, Black, Black, White, White, White, White, White},
-    // 第16行: 白白白白白白白白白白白白白白白白
-    {White, White, White, White, White, White, White, White, White, White, White, White, White, White, White, White}
+  {W, W, W, W, W, W, K, K, K, K, K, W, W, W, W, W},
+  {W, W, W, W, K, K, Y, Y, Y, Y, Y, K, K, W, W, W},
+  {W, W, W, K, Y, Y, Y, Y, Y, Y, Y, Y, Y, K, W, W},
+  {W, W, K, Y, Y, Y, Y, Y, Y, Y, Y, Y, Y, Y, K, W},
+  {W, W, K, Y, Y, Y, Y, Y, Y, Y, Y, Y, Y, Y, K, W},
+  {W, K, K, K, K, K, K, K, K, K, K, K, K, K, K, K},
+  {W, K, Y, K, W, W, K, K, K, K, W, W, K, K, Y, K},
+  {W, K, Y, K, W, K, K, K, Y, K, W, K, K, K, Y, K},
+  {W, K, Y, Y, K, K, K, Y, Y, Y, K, K, K, Y, Y, K},
+  {W, K, Y, Y, Y, Y, Y, Y, Y, Y, Y, Y, Y, Y, Y, K},
+  {W, W, K, Y, Y, Y, Y, Y, Y, Y, Y, K, Y, Y, K, W},
+  {W, W, K, Y, Y, Y, Y, K, K, K, K, Y, Y, Y, K, W},
+  {W, W, W, K, Y, Y, Y, Y, Y, Y, Y, Y, Y, K, W, W},
+  {W, W, W, W, K, K, Y, Y, Y, Y, Y, K, K, W, W, W},
+  {W, W, W, W, W, W, K, K, K, K, K, W, W, W, W, W},
+  {W, W, W, W, W, W, W, W, W, W, W, W, W, W, W, W}
 };
 for(int y = 0; y < MATRIX_HEIGHT; y++) {
     for(int x = 0; x < MATRIX_WIDTH; x++) {
@@ -282,38 +209,22 @@ for(int y = 0; y < MATRIX_HEIGHT; y++) {
 
 void Bow() {
   const CRGB pattern[16][16] = {    
-// 第0行：白白白白白白黑黑黑黑黑白白白白白
-    {White, White, White, White, White, White, Black, Black, Black, Black, Black, White, White, White, White, White},        
-// 第1行：白白白白黑黑黄黄黄黄黄黑红白红白
-    {White, White, White, White, Black, Black, Yellow, Yellow, Yellow, Yellow, Yellow, Black, Red, White, Red, White},        
-// 第2行：白红白红黄黄黄黄黄黄黄红红红红红
-    {White, Red, White, Red, Yellow, Yellow, Yellow, Yellow, Yellow, Yellow, Yellow, Red, Red, Red, Red, Red},        
-// 第3行：红红红红红黄黄黄黄黄黄黄红红红白
-    {Red, Red, Red, Red, Red, Yellow, Yellow, Yellow, Yellow, Yellow, Yellow, Yellow, Red, Red, Red, White},        
-// 第4行：白红红红黄黄黄黄黄黄黄黄黄红黑白
-    {White, Red, Red, Red, Yellow, Yellow, Yellow, Yellow, Yellow, Yellow, Yellow, Yellow, Yellow, Red, Black, White},        
-// 第5行：白黑红黄黑黑黑黄黄黄黑黑黑黄黄黑
-    {White, Black, Red, Yellow, Black, Black, Black, Yellow, Yellow, Yellow, Black, Black, Black, Yellow, Yellow, Black},        
-// 第6行：白黑黄黄黑黄黑黄黄黄黑黄黑黄黄黑
-    {White, Black, Yellow, Yellow, Black, Yellow, Black, Yellow, Yellow, Yellow, Black, Yellow, Black, Yellow, Yellow, Black},        
-// 第7行：白黑黄黑黄黄黄黑黄黑黄黄黄黑黄黑
-    {White, Black, Yellow, Black, Yellow, Yellow, Yellow, Black, Yellow, Black, Yellow, Yellow, Yellow, Black, Yellow, Black},        
-// 第8行：白黑黄黄黄黄黄黄黄黄黄黄黄黄黄黑
-    {White, Black, Yellow, Yellow, Yellow, Yellow, Yellow, Yellow, Yellow, Yellow, Yellow, Yellow, Yellow, Yellow, Yellow, Black},        
-// 第9行：白黑黄黄黄黄黄黄黄黄黄黄黄黄黄黑
-    {White, Black, Yellow, Yellow, Yellow, Yellow, Yellow, Yellow, Yellow, Yellow, Yellow, Yellow, Yellow, Yellow, Yellow, Black},        
-// 第10行：白白黑黄黄黄黑黄黄黄黑黄黄黄黑白
-    {White, White, Black, Yellow, Yellow, Yellow, Black, Yellow, Yellow, Yellow, Black, Yellow, Yellow, Yellow, Black, White},        
-// 第11行：白白黑黄黄黄黄黑黑黑黄黄黄黄黑白
-    {White, White, Black, Yellow, Yellow, Yellow, Yellow, Black, Black, Black, Yellow, Yellow, Yellow, Yellow, Black, White},        
-// 第12行：白白白黑黄黄黄黄黄黄红黄红黑白白
-    {White, White, White, Black, Yellow, Yellow, Yellow, Yellow, Yellow, Yellow, Red, Yellow, Red, Black, White, White},        
-// 第13行：白白白白黑黑黄黄黄红红红红红白白
-    {White, White, White, White, Black, Black, Yellow, Yellow, Yellow, Red, Red, Red, Red, Red, White, White},        
-// 第14行：白白白白白白黑黑黑黑红红红白白白
-    {White, White, White, White, White, White, Black, Black, Black, Black, Red, Red, Red, White, White, White},        
-// 第15行：白白白白白白白白白白白红白白白白
-    {White, White, White, White, White, White, White, White, White, White, White, Red, White, White, White, White}
+    {W, W, W, W, W, W, K, K, K, K, K, W, W, W, W, W},        
+    {W, W, W, W, K, K, Y, Y, Y, Y, Y, K, R, W, R, W},        
+    {W, R, W, R, Y, Y, Y, Y, Y, Y, Y, R, R, R, R, R},        
+    {R, R, R, R, R, Y, Y, Y, Y, Y, Y, Y, R, R, R, W},        
+    {W, R, R, R, Y, Y, Y, Y, Y, Y, Y, Y, Y, R, K, W},        
+    {W, K, R, Y, K, K, K, Y, Y, Y, K, K, K, Y, Y, K},        
+    {W, K, Y, Y, K, Y, K, Y, Y, Y, K, Y, K, Y, Y, K},        
+    {W, K, Y, K, Y, Y, Y, K, Y, K, Y, Y, Y, K, Y, K},        
+    {W, K, Y, Y, Y, Y, Y, Y, Y, Y, Y, Y, Y, Y, Y, K},        
+    {W, K, Y, Y, Y, Y, Y, Y, Y, Y, Y, Y, Y, Y, Y, K},        
+    {W, W, K, Y, Y, Y, K, Y, Y, Y, K, Y, Y, Y, K, W},        
+    {W, W, K, Y, Y, Y, Y, K, K, K, Y, Y, Y, Y, K, W},        
+    {W, W, W, K, Y, Y, Y, Y, Y, Y, R, Y, R, K, W, W},        
+    {W, W, W, W, K, K, Y, Y, Y, R, R, R, R, R, W, W},        
+    {W, W, W, W, W, W, K, K, K, K, R, R, R, W, W, W},        
+    {W, W, W, W, W, W, W, W, W, W, W, R, W, W, W, W}
 };
 for(int y = 0; y < MATRIX_HEIGHT; y++) {
     for(int x = 0; x < MATRIX_WIDTH; x++) {

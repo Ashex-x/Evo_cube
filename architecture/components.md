@@ -7,3 +7,8 @@
 ## Cube
 Size: $120*120*120$  
 Color: Black  
+## Datasheet
+pin12: INMP data output  
+pin13: INMP clock  
+pin14: INMP side select  
+pin16: WS2812B data input  

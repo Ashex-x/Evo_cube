@@ -13,6 +13,7 @@
 #include <freertos/semphr.h>    // RTOS
 #include <lwip/sockets.h>       // Socket
 #include <FastLED.h>
+// #include <music.h>
 
 #include <emoji.h>
 #include <wave.h>
@@ -62,6 +63,7 @@ void setup() {
 
   // -----------------Audio protocol---------------------
   audio_i2s();
+  // initPlay();
 
   audio_mutex = xSemaphoreCreateMutex();
   // Handle error: Mutex creation failed
@@ -117,7 +119,6 @@ void loop() {
     Serial.print("\nConnection lost. Reconnecting to server.");
     connectServer();
   } else {
-
     if (client.available()) {
 
       String response = client.readStringUntil('\n');
@@ -139,10 +140,10 @@ void initLED() {
   FastLED.show();
   
   delay(1000);
-  drawCheckerboard(CRGB::Cyan, CRGB::Magenta, 100);
-  drawCheckerboard(CRGB::Yellow, CRGB::Purple, 100);
-  drawCheckerboard(CRGB::DarkGreen, CRGB::Gold, 100);
-  drawCross(CRGB::Lavender, 1000);
+  // drawCheckerboard(CRGB::Cyan, CRGB::Magenta, 100);
+  // drawCheckerboard(CRGB::Yellow, CRGB::Purple, 100);
+  // drawCheckerboard(CRGB::DarkGreen, CRGB::Gold, 100);
+  // drawCross(CRGB::Lavender, 1000);
   blinkAll(CRGB::Green,100);
   currentState = STATE_START;
   CurrentState();
@@ -176,31 +177,34 @@ void led_screen(int emoji_i) {
   if(emoji_i == 1) {
     Serial.print("\nLED: Smile");
     currentState = STATE_SMILE;
+    // playTrack(4);
   } 
   // Sad
-  else if (emoji_i == 2) {
+  else if(emoji_i == 2) {
     Serial.print("\nLED: Sad");
     currentState = STATE_SAD;
+    // playTrack(3);
   } 
   // Cry
-  else if (emoji_i == 3) {
+  else if(emoji_i == 3) {
     Serial.print("\nLED: Cry");
     currentState = STATE_CRY;
+    //playTrack(5);
   } 
   // Wear sunglasses
-  else if (emoji_i == 4) {
+  else if(emoji_i == 4) {
     Serial.print("\nLED: Wear sunglasses");
     currentState = STATE_SUN;
-
+    // playTrack(2);
   } 
   // Smile with hearts
-  else if (emoji_i == 5) {
+  else if(emoji_i == 5) {
     Serial.print("\nLED: Smile with hearts");
     currentState = STATE_BOW;
+    // playTrack(1);
   }
   // Backward 
-  else if (emoji_i == 0) {
-    Serial.print("\nLED: Back");
+  else {
     currentState = STATE_START;
   }
   
@@ -314,7 +318,7 @@ void audio_read(void *parameter) {
         }
         
 
-        if (currentBuffer[i] > 100 || (0 - currentBuffer[i]) > 100) {
+        if (currentBuffer[i] > 500 || (0 - currentBuffer[i]) > 500) {
           Serial.printf("Large energy: %d: %d", i, currentBuffer[i]);
         }
 

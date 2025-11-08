@@ -31,7 +31,7 @@ void WaveBreathEffect::update() {
     if (breathDirection) {
       // 亮度递增
       breathBrightness++;
-      if (breathBrightness >= 255) {
+      if (breathBrightness >= 35) {
         breathDirection = false;  // 到达最大亮度，反转方向
       }
     } else {
